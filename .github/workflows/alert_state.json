@@ -1,0 +1,10 @@
+{
+  "NABIL_buy": {
+    "price": 1520.5,
+    "timestamp": "2024-01-15T10:30:00"
+  },
+  "SCBN_sell": {
+    "price": 700.25,
+    "timestamp": "2024-01-15T11:45:00"
+  }
+}
