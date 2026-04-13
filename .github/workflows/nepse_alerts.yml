@@ -1,0 +1,53 @@
+name: NEPSE Stock Alerts
+
+on:
+  schedule:
+    # Run every 15 minutes (0, 15, 30, 45)
+    - cron: '*/15 * * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  check_alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --no-cache-dir \
+            requests \
+            beautifulsoup4 \
+            gspread \
+            oauth2client
+      
+      - name: Run alert check
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GMAIL_SENDER: ${{ secrets.GMAIL_SENDER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GMAIL_RECIPIENT: ${{ secrets.GMAIL_RECIPIENT }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: python nepse_alert_agent.py
+      
+      - name: Commit state file (for deduplication)
+        if: always()
+        run: |
+          git config user.name "nepse-bot"
+          git config user.email "nepse-bot@github.com"
+          git add alert_state.json 2>/dev/null || true
+          git commit -m "Update alert state [skip ci]" 2>/dev/null || true
+          git push 2>/dev/null || true
